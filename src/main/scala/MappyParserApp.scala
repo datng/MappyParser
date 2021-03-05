@@ -1,6 +1,7 @@
 import java.io.File
 import scala.annotation.tailrec
-import scala.io.Source
+import scala.io.{Source, StdIn}
+import scala.util.{Failure, Success, Try}
 
 object MappyParserApp {
 
@@ -87,20 +88,25 @@ object MappyParserApp {
   }
 
   def main(args: Array[String]): Unit = {
+    println("Please provide the absolute path to a log File :")
+    val file = StdIn.readLine()
+    val logFileTry = Try(Source.fromFile(new File(file)))
 
-    if (args.length == 0) {
-      Console.println(s"No argument provided, default dataset will be used !")
-      val smallDatasetSrc = Source.fromResource("small_dataset.tsv")
-      val datasetList = smallDatasetSrc.getLines().toList
-      val viewModeAndZoomLevelList = getViewModeAndZoomLevelList(datasetList)
-      compressViewModeWithZoomLevelListTailRec(viewModeAndZoomLevelList).foreach(println)
-      smallDatasetSrc.close()
-    } else {
-      val logFile = Source.fromFile(new File(args(0)))
-      val datasetList = logFile.getLines().toList
-      val viewModeAndZoomLevelList = getViewModeAndZoomLevelList(datasetList)
-      compressViewModeWithZoomLevelListTailRec(viewModeAndZoomLevelList).foreach(println)
-      logFile.close()
+    logFileTry match {
+      case Success(file) =>
+        val datasetList = file.getLines().toList
+        val viewModeAndZoomLevelList = getViewModeAndZoomLevelList(datasetList)
+        compressViewModeWithZoomLevelListTailRec(viewModeAndZoomLevelList).foreach(println)
+        file.close()
+
+      case Failure(err) =>
+        println(err.getMessage)
+        println("A default file will be used instead !")
+        val smallDatasetSrc = Source.fromResource("small_dataset.tsv")
+        val datasetList = smallDatasetSrc.getLines().toList
+        val viewModeAndZoomLevelList = getViewModeAndZoomLevelList(datasetList)
+        compressViewModeWithZoomLevelListTailRec(viewModeAndZoomLevelList).foreach(println)
+        smallDatasetSrc.close()
     }
   }
 }
